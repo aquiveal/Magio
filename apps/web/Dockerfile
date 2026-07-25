@@ -32,4 +32,4 @@ EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-CMD ["sh", "-c", "prisma db push --skip-generate && node server.js"]
+CMD ["sh", "-c", "prisma db push --schema=./prisma/schema.prisma && node server.js"]

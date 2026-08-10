@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { dbConnector } from '@/lib/db/connector';
+import { requireApiUser, isAuthResponse } from '@/lib/auth/api-auth';
 
 export async function POST(request: NextRequest) {
   try {
+    const auth = await requireApiUser(request);
+    if (isAuthResponse(auth)) return auth;
+
     const body = await request.json();
     const { subject, recipient, sender } = body;
 
@@ -22,8 +26,11 @@ export async function POST(request: NextRequest) {
   }
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    const auth = await requireApiUser(request);
+    if (isAuthResponse(auth)) return auth;
+
     const emails = await dbConnector.getAllEmails();
     return NextResponse.json(emails);
   } catch (error) {

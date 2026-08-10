@@ -30,11 +30,22 @@ export async function GET(
     const userAgent = request.headers.get('user-agent') || 'unknown';
 
     const email = await dbConnector.getEmailById(cleanId);
+    const ts = new Date().toISOString();
 
-    const isSenderView = email?.senderIp && email.senderIp === ipAddress;
-    const isImmediateOpen = email && Date.now() - email.createdAt.getTime() < 5 * 60_000;
+    if (!email) {
+      console.log(`[track ${ts}] pixel hit for unknown id="${cleanId}" from ${ipAddress}`);
+      return new NextResponse(PIXEL, { headers: PIXEL_RESPONSE_HEADERS });
+    }
 
-    if (email && !isSenderView && !isImmediateOpen) {
+    const isSenderView = email.senderIp && email.senderIp === ipAddress;
+    const isImmediateOpen = Date.now() - email.createdAt.getTime() < 5 * 60_000;
+
+    if (isSenderView) {
+      console.log(`[track ${ts}] skipped id="${cleanId}" subject="${email.subject}" (sender self-view from ${ipAddress})`);
+    } else if (isImmediateOpen) {
+      console.log(`[track ${ts}] skipped id="${cleanId}" subject="${email.subject}" (immediate open within 5m)`);
+    } else {
+      console.log(`[track ${ts}] logging view id="${cleanId}" subject="${email.subject}" from ${ipAddress}`);
       getViewDetails(ipAddress, userAgent)
         .then((details) => dbConnector.logEmailView(cleanId, {
           ipAddress,
@@ -42,7 +53,7 @@ export async function GET(
           ...details,
         }))
         .catch((err) => {
-          console.error('Failed to log email view:', err);
+          console.error(`[track ${ts}] failed to log view for id="${cleanId}":`, err);
         });
     }
 

@@ -1,10 +1,14 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { dbConnector } from '@/lib/db/connector';
+import { requireApiUser, isAuthResponse } from '@/lib/auth/api-auth';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    const auth = await requireApiUser(request);
+    if (isAuthResponse(auth)) return auth;
+
     const emails = await dbConnector.getEmailStatuses();
     const statuses = emails.map((e) => ({
       subject: e.subject,

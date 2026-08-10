@@ -1,13 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { dbConnector } from '@/lib/db/connector';
+import { requireApiUser, isAuthResponse } from '@/lib/auth/api-auth';
 
 export const dynamic = 'force-dynamic';
 
 export async function DELETE(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await requireApiUser(request);
+    if (isAuthResponse(auth)) return auth;
+
     const { id } = await params;
     const since = new Date(Date.now() - 5 * 60_000);
     const result = await dbConnector.deleteRecentViews(id, since);

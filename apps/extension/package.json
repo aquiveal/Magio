@@ -34,6 +34,10 @@
       "https://*.run.pinggy-free.link/*",
       "https://*.trycloudflare.com/*",
       "https://mail.google.com/*"
+    ],
+    "optional_host_permissions": [
+      "http://*/*",
+      "https://*/*"
     ]
   }
 }

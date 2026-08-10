@@ -1,16 +1,23 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Mail, Radar } from 'lucide-react';
+import { usePathname, useRouter } from 'next/navigation';
+import { LayoutDashboard, Mail, Radar, LogOut } from 'lucide-react';
 
 const NAV_ITEMS = [
   { label: 'Overview', icon: <LayoutDashboard className="w-4 h-4" />, href: '/overview' },
   { label: 'Emails', icon: <Mail className="w-4 h-4" />, href: '/emails' },
 ];
 
-export function SidebarNav() {
+export function SidebarNav({ username }: { username?: string }) {
   const pathname = usePathname();
+  const router = useRouter();
+
+  const logout = async () => {
+    await fetch('/api/auth/logout', { method: 'POST' });
+    router.replace('/login');
+    router.refresh();
+  };
 
   return (
     <aside className="w-56 border-r border-border bg-sidebar flex flex-col h-screen fixed left-0 top-0">
@@ -42,6 +49,21 @@ export function SidebarNav() {
           );
         })}
       </nav>
+
+      {username && (
+        <div className="p-3 border-t border-border">
+          <div className="px-3 py-1.5 text-[11px] text-muted-foreground truncate">
+            Signed in as <span className="font-medium text-foreground">{username}</span>
+          </div>
+          <button
+            onClick={logout}
+            className="mt-1 w-full flex items-center gap-3 px-3 py-2 rounded-md text-[13px] font-medium text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors"
+          >
+            <LogOut className="w-4 h-4" />
+            Sign out
+          </button>
+        </div>
+      )}
     </aside>
   );
 }

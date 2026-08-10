@@ -64,4 +64,33 @@ export const dbConnector = {
       },
     });
   },
+
+  // --- Users & sessions ---
+
+  async createUser(data: { username: string; passwordHash: string; apiToken: string }) {
+    return prisma.user.create({ data });
+  },
+
+  async getUserByUsername(username: string) {
+    return prisma.user.findUnique({ where: { username } });
+  },
+
+  async getUserByApiToken(apiToken: string) {
+    return prisma.user.findUnique({ where: { apiToken } });
+  },
+
+  async createSession(data: { token: string; userId: string; expiresAt: Date }) {
+    return prisma.session.create({ data });
+  },
+
+  async getSessionWithUser(token: string) {
+    return prisma.session.findUnique({
+      where: { token },
+      include: { user: true },
+    });
+  },
+
+  async deleteSession(token: string) {
+    return prisma.session.deleteMany({ where: { token } });
+  },
 };

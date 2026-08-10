@@ -1,17 +1,29 @@
-const API_BASE_URL = process.env.PLASMO_PUBLIC_API_URL || 'http://localhost:3000';
+import { getApiConfigSync } from './storage';
 
-const POST_HEADERS = {
-  'Content-Type': 'application/json',
-  'ngrok-skip-browser-warning': 'true',
-  'X-Pinggy-No-Screen': 'true',
-  'Accept': 'application/json',
-};
+function apiUrl(path: string): string {
+  return `${getApiConfigSync().host}${path}`;
+}
+
+// Headers for authenticated management calls. The tracking pixel (getPixelUrl)
+// is deliberately excluded: it is embedded in outgoing mail and must stay public.
+function authHeaders(extra: Record<string, string> = {}): Record<string, string> {
+  const { token } = getApiConfigSync();
+  const headers: Record<string, string> = {
+    'ngrok-skip-browser-warning': 'true',
+    'X-Pinggy-No-Screen': 'true',
+    ...extra,
+  };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  return headers;
+}
 
 export async function registerEmail(subject: string, recipient: string, sender: string): Promise<{ id: string } | null> {
   try {
-    const res = await fetch(`${API_BASE_URL}/api/emails`, {
+    const res = await fetch(apiUrl('/api/emails'), {
       method: 'POST',
-      headers: POST_HEADERS,
+      headers: authHeaders({ 'Content-Type': 'application/json', 'Accept': 'application/json' }),
       body: JSON.stringify({ subject, recipient, sender }),
     });
     if (res.ok) return res.json();
@@ -24,7 +36,7 @@ export async function registerEmail(subject: string, recipient: string, sender: 
 }
 
 export function getPixelUrl(emailId: string): string {
-  return `${API_BASE_URL}/api/track/${emailId}.gif`;
+  return apiUrl(`/api/track/${emailId}.gif`);
 }
 
 export type TrackingData = {
@@ -50,7 +62,9 @@ export type TrackingData = {
 
 export async function fetchTrackingData(subject: string): Promise<TrackingData | null> {
   try {
-    const res = await fetch(`${API_BASE_URL}/api/emails/search?subject=${encodeURIComponent(subject)}`);
+    const res = await fetch(apiUrl(`/api/emails/search?subject=${encodeURIComponent(subject)}`), {
+      headers: authHeaders(),
+    });
     if (!res.ok) return null;
     return res.json();
   } catch {
@@ -60,7 +74,10 @@ export async function fetchTrackingData(subject: string): Promise<TrackingData |
 
 export async function deleteLatestTrackingView(emailId: string): Promise<boolean> {
   try {
-    const res = await fetch(`${API_BASE_URL}/api/emails/${emailId}/views/latest`, { method: 'DELETE' });
+    const res = await fetch(apiUrl(`/api/emails/${emailId}/views/latest`), {
+      method: 'DELETE',
+      headers: authHeaders(),
+    });
     return res.ok;
   } catch {
     return false;
@@ -71,7 +88,7 @@ export type EmailStatus = { subject: string; viewCount: number };
 
 export async function fetchAllTrackingStatuses(): Promise<EmailStatus[]> {
   try {
-    const res = await fetch(`${API_BASE_URL}/api/emails`);
+    const res = await fetch(apiUrl('/api/emails'), { headers: authHeaders() });
     if (!res.ok) return [];
     const emails: { subject: string; views: unknown[] }[] = await res.json();
     return emails.map((e) => ({ subject: e.subject, viewCount: e.views.length }));

@@ -165,7 +165,17 @@ magio/
 
 | Variable | Description |
 |----------|-------------|
-| `PLASMO_PUBLIC_API_URL` | URL of the tracking API (default: `http://localhost:3000`) |
+| `PLASMO_PUBLIC_API_URL` | Default server URL used before the user connects an account in the popup (default: `http://localhost:3000`) |
+
+## Accounts & authentication
+
+Magio uses account-based auth. The dashboard and the management API require a signed-in user; the public tracking pixel (`/api/track/*`) never does.
+
+- **Dashboard** — visiting any page redirects to `/login` until you sign in. Create an account at `/signup`.
+- **Extension** — open the popup, enter your **server URL**, and **log in or sign up**. The extension stores a per-user API token and sends it as a `Bearer` token on all tracking calls. The server host can point anywhere (localhost, a tunnel, or your deployment) without rebuilding.
+- **Passwords** are hashed with scrypt (Node's built-in `crypto`); sessions are httpOnly cookies; the extension authenticates with a per-user API token.
+
+> Signup is open by default, and all signed-in users share the same tracked-email workspace. For a private deployment, put the app behind a network boundary (VPN/allowlist) or add a signup gate.
 
 ---
 

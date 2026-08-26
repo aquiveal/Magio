@@ -46,15 +46,16 @@ export async function GET(
       console.log(`[track ${ts}] skipped id="${cleanId}" subject="${email.subject}" (immediate open within 5m)`);
     } else {
       console.log(`[track ${ts}] logging view id="${cleanId}" subject="${email.subject}" from ${ipAddress}`);
-      getViewDetails(ipAddress, userAgent)
-        .then((details) => dbConnector.logEmailView(cleanId, {
+      try {
+        const details = await getViewDetails(ipAddress, userAgent);
+        await dbConnector.logEmailView(cleanId, {
           ipAddress,
           userAgent,
           ...details,
-        }))
-        .catch((err) => {
-          console.error(`[track ${ts}] failed to log view for id="${cleanId}":`, err);
         });
+      } catch (err) {
+        console.error(`[track ${ts}] failed to log view for id="${cleanId}":`, err);
+      }
     }
 
     return new NextResponse(PIXEL, { headers: PIXEL_RESPONSE_HEADERS });
